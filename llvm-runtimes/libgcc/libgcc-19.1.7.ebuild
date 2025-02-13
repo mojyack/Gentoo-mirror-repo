@@ -111,6 +111,10 @@ src_compile() {
 		"${CC}" -rtlib=compiler-rt -resource-dir="${BUILD_DIR}" \
 			-print-libgcc-file-name || die
 	)
+	local libunwind=$(
+		"${CC}" -rtlib=compiler-rt -resource-dir="${BUILD_DIR}" \
+			--print-file-name=libunwind.a || die
+	)
 
 	# Use the llvm-libgcc's version script to produce libgcc.{a,so}, which
 	# combines compiler-rt and libunwind into a libgcc replacement.
@@ -120,8 +124,8 @@ src_compile() {
 	#
 	# * We build the local copy of compiler-rt manually, to have a full control
 	#   over CMake options.
-	# * Upstream links the locally built copy of libunwind statically. We link the
-	#   system-wide libunwind dynamically.
+	# * Upstream links the locally built copy of libunwind. We link the
+	#   system-wide libunwind.
 	#
 	# [0] https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/llvm-libgcc/CMakeLists.txt#L102-L120
 	"${CC}" -E -xc \
@@ -132,9 +136,9 @@ src_compile() {
 		-Wl,--version-script,gcc_s.ver \
 		-Wl,--undefined-version \
 		-Wl,--whole-archive \
-		"${rtlib}" \
+		"${rtlib}" "${libunwind}" \
 		-Wl,-soname,libgcc_s.so.1.0 \
-		-lc -lunwind -shared \
+		-lc -shared \
 		-o libgcc_s.so.1.0 || die
 	cp "${rtlib}" libgcc.a || die
 }

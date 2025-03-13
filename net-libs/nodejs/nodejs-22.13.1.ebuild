@@ -48,7 +48,10 @@ RDEPEND=">=app-arch/brotli-1.1.0:=
 		>=dev-libs/openssl-1.1.1:0=
 	)
 	!system-ssl? ( >=net-libs/ngtcp2-1.9.1:=[-gnutls] )
-	sys-devel/gcc:*"
+	|| (
+		llvm-runtimes/compiler-rt[atomic-builtins]
+		sys-devel/gcc:*
+	)"
 BDEPEND="${PYTHON_DEPS}
 	app-alternatives/ninja
 	sys-apps/coreutils
@@ -133,7 +136,7 @@ src_configure() {
 	# is not yet implemented by llvm-runtimes/compiler-rt (see
 	# https://reviews.llvm.org/D85044?id=287068), therefore
 	# we depend on gcc and force using libgcc as the support lib
-	tc-is-clang && append-ldflags "--rtlib=libgcc --unwindlib=libgcc"
+	tc-is-clang && ! has_version llvm-runtimes/compiler-rt[atomic-builtins] && append-ldflags "--rtlib=libgcc --unwindlib=libgcc"
 
 	local myconf=(
 		--ninja
